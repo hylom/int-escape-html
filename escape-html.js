@@ -1,10 +1,20 @@
+var eh = {};
 
-if (exports) {
-  exports.blank_line_to_paragraph = blank_line_to_paragraph;
-  exports.escape = escape;
+try {
+    if (exports === undefined) {
+        exports.blank_line_to_paragraph = blank_line_to_paragraph;
+        exports.escape = escape;
+    } else {
+        eh.blank_line_to_paragraph = blank_line_to_paragraph;
+        eh.escape = escape;
+    }
+}
+catch (e) {
+    eh.blank_line_to_paragraph = _eh_blank_line_to_paragraph;
+    eh.escape = _eh_escape;
 }
 
-function blank_line_to_paragraph(text) {
+function _eh_blank_line_to_paragraph(text) {
   const lines = text.split(/(\r\n|\n|\r)/);
   const blank = /^\s*$/;
   var results = ["<p>"];
@@ -111,7 +121,7 @@ function _escape(tag) {
   return t;
 }
 
-function escape(allowed_tags, text) {
+function _eh_escape(allowed_tags, text) {
   var cursor = 0;
   var last = 0;
   var results = [];
