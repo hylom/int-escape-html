@@ -3,7 +3,7 @@
     "description" : "some intelligent HTML escaper",
     "keywords" : ["html", "tidy", "escape"],
     "homepage" : "http://hylom.net/",
-    "version" : "0.1",
+    "version" : "0.1.0",
     "author" : {
         "name" : "Hiromichi Matsushima",
         "email" : "hylom@hylom.net",
