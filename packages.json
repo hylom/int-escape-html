@@ -1,0 +1,28 @@
+{
+    "name" : "escape-html", 
+    "description" : "some intelligent HTML escaper",
+    "keywords" : ["html", "tidy", "escape"],
+    "homepage" : "http://hylom.net/",
+    "version" : "0.1",
+    "author" : {
+        "name" : "Hiromichi Matsushima",
+        "email" : "hylom@hylom.net",
+        "url" : "http://hylom.net/"
+    },
+    "scripts" : { "test" : "node test.js" },
+    "repository" : {
+        "type" : "git",
+        "url" : "http://github.com/hylom/int-escape-html"
+    },
+    "bugs" : "http://github.com/hylom/int-escape-html/issues",
+    "dependencies" : { 
+	"jquery": "3.x",
+	"jsdom": "9.6.x"
+    },
+    "licenses" : [
+        {
+            "type" : "GPL-2.0",
+            "url" : "https://opensource.org/licenses/GPL-2.0"
+        }
+    ]
+}
