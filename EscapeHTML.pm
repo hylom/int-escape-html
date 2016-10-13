@@ -39,6 +39,9 @@ sub trim {
 
 sub escape_tag {
     my ($allowed_tags, $tag) = @_;
+    if (%$allowed_tags) {
+        return _escape($tag);
+    }
     my $rex = '\A<(.*)>\z';
     $tag =~ m/$rex/;
     my $m = $1;
@@ -72,7 +75,7 @@ sub escape_tag {
         return _escape($tag);
     }
 
-    my $valid = 1;
+    my $valid = 0;
     for (my $i = 0; $i < @$terms; $i++) {
         $valid = 0;
         my ($ename) = split /=/, $terms->[$i];

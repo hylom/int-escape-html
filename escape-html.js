@@ -35,6 +35,9 @@ function _eh_blank_line_to_paragraph(text) {
 }
 
 function _escape_tag(allowed_tags, tag) {
+  if (Object.keys(allowed_tags).length === 0) {
+    return _escape(tag);
+  }
   const rex = /^<(.*)>$/m;
   const m = rex.exec(tag);
   if (m === null) {
@@ -66,7 +69,7 @@ function _escape_tag(allowed_tags, tag) {
     return _escape(tag);
   }
 
-  var valid = 1;
+  var valid = 0;
   for (var i = 0; i < terms.length; i++) {
     valid = 0;
     var ename = terms[i].split("=", 1)[0];
