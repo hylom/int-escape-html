@@ -24,9 +24,12 @@ function main(jq) {
   console.log("\n-----input:-----");
   console.log(test);
 
+  console.log("\n-----escaped:-----");
+  const escaped = eh.escape(allowed_tags, test);
+  console.log(escaped);
+
   console.log("\n-----quoted:-----");
-  const quoted = eh.blank_line_to_paragraph(eh.escape(allowed_tags, test));
-  
+  const quoted = eh.blank_line_to_paragraph(escaped);
   console.log(quoted);
 
   console.log("\n-----output:-----");
