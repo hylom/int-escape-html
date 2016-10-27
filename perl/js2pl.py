@@ -9,8 +9,10 @@ rex_var = re.compile(ur"(var|const)")
 rex_foreach = re.compile(ur"(\$\w+)\.forEach\s*\(\s*(\$\w+)\s+=>\s+{")
 rex_foreach_end = re.compile(ur"}\);")
 rex_comment = re.compile(ur"//")
-rex_method_call = re.compile(ur"(\$\w+\.)")
-rex_rex = re.compile(ur"([( \s]+)\/([^/]+?)\/(?:m|g|mg|gm)([ ,;)])")
+rex_method_call = re.compile(ur"(\$[\w\->{}]+\.)")
+rex_rex = re.compile(ur"([( \s]+)\/([^/]+?)\/(?:m|g|mg|gm)?([ ,;)])")
+rex_object_keys = re.compile(ur"Object.keys\(\s*(\$\w+)\s*\)")
+rex_triple_equal = re.compile(ur"===")
 
 def main():
     js_only = 0
@@ -29,7 +31,6 @@ def main():
             js_only = 1
             continue
 
-
         # replace "function" to "sub"
         m = rex_function.match(l)
         if m:
@@ -45,7 +46,7 @@ def main():
         # replace ".forEach"
         m = rex_foreach.search(l)
         if m:
-            s = "for my {0} (@{1}) {{"
+            s = "for my {0} (@{{{1}->self}}) {{"
             s = s.format(m.group(2), m.group(1));
             l = rex_foreach.sub(s, l)
 
@@ -53,10 +54,22 @@ def main():
         if m:
             l = rex_foreach_end.sub("}", l)
 
+        # Object.keys
+        #ur"Object.keys\(\s*(\$\w+)\s*)\)"
+        m = rex_object_keys.search(l)
+        if m:
+            s = m.group(1) + "->keys";
+            l = rex_object_keys.sub(s, l)
+
         # comment
         m = rex_comment.search(l)
         if m:
             l = rex_comment.sub("#", l)
+
+        # ===
+        m = rex_triple_equal.search(l)
+        if m:
+            l = rex_triple_equal.sub("==", l)
 
         # method call
         m = rex_method_call.search(l)
