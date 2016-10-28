@@ -1,5 +1,6 @@
 //JS:ONLY
 var eh = {};
+
 try {
   if (exports !== undefined) {
     exports.blank_line_to_paragraph = blank_line_to_paragraph;
@@ -10,8 +11,8 @@ try {
   }
 }
 catch (e) {
-    eh.blank_line_to_paragraph = blank_line_to_paragraph;
-    eh.escape = escape;
+  eh.blank_line_to_paragraph = blank_line_to_paragraph;
+  eh.escape = escape;
 }
 
 function make_array(ar) {
@@ -20,7 +21,7 @@ function make_array(ar) {
 //END
 
 function blank_line_to_paragraph($text) {
-  const $lines = $text.split(/(\r\n|\n|\r)/);
+  const $lines = $text.split(/\n/);
   const $blank = /^\s*$/;
   var $results = make_array(["<p>"]);
   var $cont = 0;
@@ -71,6 +72,9 @@ function _escape_tag($allowed_tags, $tag) {
   const $allowed = $allowed_tags[$name];
   if ($allowed == undefined) {
     return to_entity($tag);
+  }
+  if ($allowed.length == 0) {
+    return $tag;
   }
 
   var $valid = 0;

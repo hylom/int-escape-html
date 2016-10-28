@@ -12,11 +12,12 @@ rex_comment = re.compile(ur"//")
 rex_method_call = re.compile(ur"(\$[\w\->{}]+\.)")
 rex_rex = re.compile(ur"([( \s]+)\/([^/]+?)\/(?:m|g|mg|gm)?([ ,;)])")
 rex_object_keys = re.compile(ur"Object.keys\(\s*(\$\w+)\s*\)")
-rex_triple_equal = re.compile(ur"===")
+rex_triple_equal = re.compile(ur"([!=]=)=")
+rex_index_ref = re.compile(ur"(\))(\[\d+\])")
 
 def main():
     js_only = 0
-    print "use 'Js2pl.pm';\n";
+    print "use Js2pl;\n";
     for l in sys.stdin:
         l = l.rstrip()
 
@@ -66,10 +67,10 @@ def main():
         if m:
             l = rex_comment.sub("#", l)
 
-        # ===
+        # ===, !==
         m = rex_triple_equal.search(l)
         if m:
-            l = rex_triple_equal.sub("==", l)
+            l = rex_triple_equal.sub(m.group(1), l)
 
         # method call
         m = rex_method_call.search(l)
@@ -78,11 +79,17 @@ def main():
             s = s.replace(".", "->")
             l = rex_method_call.sub(s, l)
 
+        # index ref
+        m = rex_index_ref.search(l)
+        if m:
+            s = m.group(1) + "->" + m.group(2)
+            l = rex_index_ref.sub(s, l)
+
         # rex
         m = rex_rex.search(l)
         if m:
             s = m.group(2).replace("\\", "\\\\");
-            s = m.group(1) + '"' + s + '"' + m.group(3)
+            s = m.group(1) + 'qr/' + s + '/' + m.group(3)
             l = rex_rex.sub(s, l)
 
         # done
