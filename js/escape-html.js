@@ -14,15 +14,24 @@ catch (e) {
     eh.escape = escape;
 }
 
-function make_array(ar) {
+function array(ar) {
   return ar;
+}
+function hash(ha) {
+  return ha;
+}
+function regex(re) {
+  return re;
+}
+function string(str) {
+  return str;
 }
 //END
 
 function blank_line_to_paragraph($text) {
   const $lines = $text.split(/(\r\n|\n|\r)/);
   const $blank = /^\s*$/;
-  var $results = make_array(["<p>"]);
+  var $results = array(["<p>"]);
   var $cont = 0;
   $lines.forEach($l => {
     if ($blank.exec($l)) {
@@ -43,7 +52,7 @@ function _escape_tag($allowed_tags, $tag) {
   if (Object.keys($allowed_tags).length === 0) {
     return to_entity(tag);
   }
-  const $rex = /^<(.*)>$/m;
+  const $rex = regex(/^<(.*)>$/m);
   const $m = $rex.exec($tag);
   if ($m == null) {
     return to_entity($tag);
@@ -69,7 +78,7 @@ function _escape_tag($allowed_tags, $tag) {
   var $name = $terms.shift();
 
   const $allowed = $allowed_tags[$name];
-  if ($allowed == undefined) {
+  if (!$allowed) {
     return to_entity($tag);
   }
 
