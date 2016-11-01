@@ -11,7 +11,7 @@ require('jsdom').env('', (err, window) => {
 });
 
 function main(jq) {
-  const test = '<a href="example.com/><">example.com</a>\nfoo>bar< hoge&lt;hoge<br>\n\n<script>hoge&hoge</script>\n<blockquote><i>block<strong>hoge</i></strong>quoted!!';
+  const test = '<a href="example.com/><">example.com</a>\nfoo>bar< hoge&lt;hoge<br>\n\n<script>hoge&hoge</script>\n\n\n<blockquote>\n<i>block<strong>hoge</i></strong>quoted!!';
 
   const allowed_tags = {
     "a": ["href"],
