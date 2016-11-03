@@ -29,58 +29,87 @@ function string(str) {
 }
 //END
 
+/* PL:ONLY
+package EscapeHTML;
+use strict;
+use warnings;
+use utf8;
+use Data::Dumper;
+use Js2pl;
+END */
+
 function blank_line_to_paragraph($text) {
+  /* PL:ONLY
+  $text = string($text);
+  END */
   const $lines = $text.split(/\n/);
   const $blank = /^\s*$/;
-  var $results = array(["<p>"]);
+  var $results = array([string("<p>")]);
   var $cont = 0;
+
   $lines.forEach($l => {
-    if ($blank.exec($l)) {
+    if ($l.match($blank)) {
       if (!$cont) {
         $cont = 1;
-        $results.push("</p><p>");
+        $results.push(string("</p><p>"));
       }
     } else {
       $results.push($l);
       $cont = 0;
     }
   });
-  $results.push("</p>");
+  $results.push(string("</p>"));
   return $results.join("\n");
 }
 
 function _escape_tag($allowed_tags, $tag) {
   if (Object.keys($allowed_tags).length === 0) {
-    return to_entity(tag);
+    return _to_entity($tag);
   }
   const $rex = regex(/^<(.*)>$/m);
   const $m = $rex.exec($tag);
-  if ($m == null) {
-    return to_entity($tag);
+  if (!$m) {
+    return _to_entity($tag);
   }
-  const $body = $m[1].trim();
+  const $body = string($m[1]).trim();
   if ($body.length == 0) {
-    return to_entity($tag);
+    return _to_entity($tag);
   }
   // check if end tag?
-  if ($body.charAt(0) == '/') {
+  if (_char_at_eq($body, 0, '/')) {
     const $rest = $body.slice(1).trim();
     if ($rest.length == 0) {
-      return to_entity($tag);
+      return _to_entity($tag);
     }
-    var $name = $rest.split(/\s+/, 1)[0];
+    var $splited = $rest.split(/\s+/, 1);
+    var $name = $splited.shift();
+    //JS:ONLY
     if ($name.length && $allowed_tags[$name]) {
       return "</" + $name + ">";
     } 
-    return to_entity($tag);
+    //END
+    /* PL:ONLY
+    my $raw_name = $name->{string};
+    if ($name->length
+        && $allowed_tags->{hash}->{$raw_name}) {
+        return string("</" . $raw_name . ">");
+    } 
+    END  */
+    return _to_entity($tag);
   }
 
   const $terms = _split_body($body);
   var $name = $terms.shift();
 
+  //JS:ONLY
   const $allowed = $allowed_tags[$name];
+  //END
+  /* PL:ONLY
+  my $allowed = $allowed_tags->{hash}->{$name};
+  $allowed = array($allowed);
+  END */
   if (!$allowed) {
-    return to_entity($tag);
+    return _to_entity($tag);
   }
   if ($allowed.length == 0) {
     return $tag;
@@ -89,9 +118,20 @@ function _escape_tag($allowed_tags, $tag) {
   var $valid = 0;
   for (var $i = 0; $i < $terms.length; $i++) {
     $valid = 0;
-    var $ename = $terms[$i].split("=", 1)[0];
+    //JS:ONLY
+    var $ename = string($terms[$i]).split("=", 1).shift();
+    //END
+    /* PL:ONLY
+    my $el = string($terms->{array}->[$i]);
+    my $ename = $el->split("=", 1)->shift()->{string};
+    END */
     for (var $j = 0; $j < $allowed.length; $j++) {
+      //JS:ONLY
       if ($ename == $allowed[$i]) {
+      //END
+      /* PL:ONLY
+      if ($ename eq $allowed->{array}->[$i]) {
+      END */
         $valid = 1;
         break;
       }
@@ -103,38 +143,42 @@ function _escape_tag($allowed_tags, $tag) {
   if ($valid) {
     return $tag;
   } else {
-    return to_entity($tag);
+    return _to_entity($tag);
   }
 }
 
 function _split_body($body) {
-  const $rexes = [
-      /^([^\s=]+="[^"]*")\s*(.*)$/mg,
-      /^([^\s=]+='[^']*')\s*(.*)$/mg,
-      /^([^\s=]+=\S+)\s*(.*)$/mg,
-      /^(\S+)\s*(.*)$/mg,
-  ];
-  const $results = make_array([]);
+  const $rexes = array([
+      /^([^\s=]+="[^"]*")\s*(.*)$/m,
+      /^([^\s=]+='[^']*')\s*(.*)$/m,
+      /^([^\s=]+=\S+)\s*(.*)$/m,
+      /^(\S+)\s*(.*)$/m,
+  ]);
+  const $results = array([]);
 
-  while($body.length) {
+  while($body && $body.length) {
     var $m = null;
     for (var $i = 0; $i < $rexes.length && !$m; $i++) {
-      $m = $rexes[$i].exec($body);
+      //JS:ONLY
+      $m = $body.match($rexes[$i]);
+      //END
+      /* PL:ONLY
+      $m = $body->match($rexes->{array}->[$i]);
+      END */
     }
     if (!$m) {
       break;
     }
     $results.push($m[1]);
-    if ($m[2]) {
-      $body = $m[2];
-    } else {
-      break;
-    }
+    $body = string($m[2]);
+    //$m.shift();
+    //$results.push($m.shift());
+    //$body = $m.shift();
   }
   return $results;
 }
 
-function to_entity($tag) {
+function _to_entity($tag) {
   var $t = $tag.replace(/&(?!|lt;|gt;)/gm, '&amp;');
   $t = $t.replace(/</gm, '&lt;');
   $t = $t.replace(/>/gm, '&gt;');
@@ -143,25 +187,39 @@ function to_entity($tag) {
 
 function _slice_and_push($results, $text, $last, $cursor, $allowed_tags) {
   var $s = $text.slice($last, $cursor);
-  if ($allowed_tags !== undefined) {
+  if ($allowed_tags) {
     $s = _escape_tag($allowed_tags, $s);
     $results.push($s);
   } else {
-    $results.push(to_entity($s));
+    $results.push(_to_entity($s));
   }
+}
+
+function _char_at_eq($string, $index, $char) {
+  //JS:ONLY
+  return $string.charAt($index) == $char;
+  //END
+  /* PL:ONLY
+  return $string->charAt($index) eq $char;
+  END */
 }
 
 function escape($allowed_tags, $text) {
   var $cursor = 0;
   var $last = 0;
-  var $results = make_array([]);
+  var $results = array([]);
   var $in_tag = 0;
   var $in_attr = 0;
   var $start_quote = "";
 
+  /* PL:ONLY
+  $text = string($text);
+  $allowed_tags = hash($allowed_tags);
+  END */
+
   while($cursor < $text.length) {
     if ($in_attr) {
-      if ($text.charAt($cursor) === $start_quote) {
+      if (_char_at_eq($text, $cursor, $start_quote)) {
         $in_attr = 0;
       }
       $cursor++;
@@ -169,14 +227,14 @@ function escape($allowed_tags, $text) {
     }
 
     if ($in_tag) {
-      if ($text.charAt($cursor) === '>') {
+      if (_char_at_eq($text, $cursor, '>')) {
         $cursor++;
         _slice_and_push($results, $text, $last, $cursor, $allowed_tags);
         $last = $cursor;
         $in_tag = 0;
         continue;
       }
-      if ($text.charAt($cursor) === '<') {
+      if (_char_at_eq($text, $cursor, '<')) {
         if ($last != $cursor) {
           _slice_and_push($results, $text, $last, $cursor);
           $last = $cursor;
@@ -184,20 +242,20 @@ function escape($allowed_tags, $text) {
         $cursor++;
         continue;
       }
-      if ($text.charAt($cursor) === '"') {
+      if (_char_at_eq($text, $cursor, '"')) {
         $in_attr = 1;
         $start_quote = '"';
         $cursor++;
         continue;
       }
-      if ($text.charAt($cursor) === "'") {
+      if (_char_at_eq($text, $cursor, "'")) {
         $in_attr = 1;
         $start_quote = "'";
         $cursor++;
         continue;
       }
     }
-    if ($text.charAt($cursor) === '<') {
+    if (_char_at_eq($text, $cursor, '<')) {
       $in_tag = 1;
       if ($last != $cursor) {
         _slice_and_push($results, $text, $last, $cursor);
@@ -207,7 +265,7 @@ function escape($allowed_tags, $text) {
       continue;
     }
 
-    if ($text.charAt($cursor) === '>') {
+    if (_char_at_eq($text, $cursor, '>')) {
       $cursor++;
       if ($last != $cursor) {
         _slice_and_push($results, $text, $last, $cursor);

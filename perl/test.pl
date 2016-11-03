@@ -1,11 +1,11 @@
-use 'Js2pl.pm';
+use Js2pl;
 
 
 sub blank_line_to_paragraph {
   my ($text) = @_;
 
-  my $lines = $text->split("(\r\n|\n|\r)");
-  my $blank = "^\s*$";
+  my $lines = $text->split(qr/\n/);
+  my $blank = qr/^\s*$/;
   my $results = array(["<p>"]);
   my $cont = 0;
   for my $l (@{$lines->self}) {
@@ -29,7 +29,7 @@ sub _escape_tag {
   if ($allowed_tags->keys->length == 0) {
     return to_entity(tag);
   }
-  my $rex = regex("^<(.*)>$");
+  my $rex = regex(qr/^<(.*)>$/);
   my $m = $rex->exec($tag);
   if ($m == null) {
     return to_entity($tag);
@@ -44,7 +44,7 @@ sub _escape_tag {
     if ($rest->length == 0) {
       return to_entity($tag);
     }
-    my $name = $rest->split("\s+", 1)[0];
+    my $name = $rest->split(qr/\s+/, 1)->[0];
     if ($name->length && $allowed_tags[$name]) {
       return "</" + $name + ">";
     }
@@ -58,11 +58,14 @@ sub _escape_tag {
   if (!$allowed) {
     return to_entity($tag);
   }
+  if ($allowed->length == 0) {
+    return $tag;
+  }
 
   my $valid = 0;
   for (my $i = 0; $i < $terms->length; $i++) {
     $valid = 0;
-    my $ename = $terms[$i].split("=", 1)[0];
+    my $ename = $terms[$i].split("=", 1)->[0];
     for (my $j = 0; $j < $allowed->length; $j++) {
       if ($ename == $allowed[$i]) {
         $valid = 1;
@@ -84,10 +87,10 @@ sub _split_body {
   my ($body) = @_;
 
   my $rexes = [
-      "^([^\s=]+="[^"]*")\s*(.*)$",
-      "^([^\s=]+='[^']*')\s*(.*)$",
-      "^([^\s=]+=\S+)\s*(.*)$",
-      "^(\S+)\s*(.*)$",
+      qr/^([^\s=]+="[^"]*")\s*(.*)$/,
+      qr/^([^\s=]+='[^']*')\s*(.*)$/,
+      qr/^([^\s=]+=\S+)\s*(.*)$/,
+      qr/^(\S+)\s*(.*)$/,
   ];
   my $results = make_array([]);
 
@@ -112,9 +115,9 @@ sub _split_body {
 sub to_entity {
   my ($tag) = @_;
 
-  my $t = $tag->replace("&(?!|lt;|gt;)", '&amp;');
-  $t = $t->replace("<", '&lt;');
-  $t = $t->replace(">", '&gt;');
+  my $t = $tag->replace(qr/&(?!|lt;|gt;)/, '&amp;');
+  $t = $t->replace(qr/</, '&lt;');
+  $t = $t->replace(qr/>/, '&gt;');
   return $t;
 }
 
@@ -122,7 +125,7 @@ sub _slice_and_push {
   my ($results, $text, $last, $cursor, $allowed_tags) = @_;
 
   my $s = $text->slice($last, $cursor);
-  if ($allowed_tags !== undefined) {
+  if ($allowed_tags != undefined) {
     $s = _escape_tag($allowed_tags, $s);
     $results->push($s);
   } else {

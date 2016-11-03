@@ -8,7 +8,8 @@ use Data::Dumper;
 
 use EscapeHTML;
 
-my $test = '<a href="example.com/><">example.com</a>\nfoo>bar< hoge&lt;hoge<br>\n\n<script>hoge&hoge</script>\n\n\n<blockquote>\n<i>block<strong>hoge</i></strong>quoted!!';
+my $test = "<a href=\"example.com/><\">example.com</a>\nfoo>bar< hoge&lt;hoge<br>\n\n<script>hoge&hoge</script>\n\n\n<blockquote>\n<i>block<strong>hoge</i></strong>quoted!!";
+
 my $allowed_tags = {
     "a"=> ["href"],
     "p"=> [],
@@ -18,7 +19,8 @@ my $allowed_tags = {
 };
 
 print "\n-----input:-----\n";
-print Dumper($allowed_tags);
+#print Dumper($allowed_tags);
+print $test;
 
 print "\n-----escaped:-----\n";
 my $escaped = EscapeHTML::escape($allowed_tags, $test);

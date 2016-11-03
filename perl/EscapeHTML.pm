@@ -1,232 +1,234 @@
-package EscapeHTML;
-use Exporter 'import';
-our @EXPORT_OK = qw(blank_line_to_paragraph escape_html);
-our @EXPORT = qw(blank_line_to_paragraph escape_html);
 
+package EscapeHTML;
 use strict;
 use warnings;
 use utf8;
-
 use Data::Dumper;
+use Js2pl;
 
 sub blank_line_to_paragraph {
-    my $text = shift;
-    my @lines = split /(\r\n|\n|\r)/, $text;
-    my $blank = '^\s*$';
-    my $results = ["<p>"];
-    my $cont = 0;
+  my ($text) = @_;
 
-    for my $l (@lines) {
-        if ($l =~ /$blank/) {
-            if (!$cont) {
-                $cont = 1;
-                push @$results, "</p><p>";
-            }
-        } else {
-            push @$results, $l;
-            $cont = 0;
-        }
-    }
-    push @$results, "</p>";
-    return join("\n", @$results);
-}
+  $text = string($text);
+  my $lines = $text->split(qr/\n/);
+  my $blank = qr/^\s*$/;
+  my $results = array([string("<p>")]);
+  my $cont = 0;
 
-sub trim {
-    my $t = shift;
-    $t =~ s/\A\s*(.*)\s*\z/$1/;
-    return $t;
-}
-
-sub escape_tag {
-    my ($allowed_tags, $tag) = @_;
-    if (%$allowed_tags) {
-        return _escape($tag);
-    }
-    my $rex = '\A<(.*)>\z';
-    $tag =~ m/$rex/;
-    my $m = $1;
-
-    if (!$m) {
-        return _escape($tag);
-    }
-    my $body = trim($m);
-    if (length $body == 0) {
-        return _escape($tag);
-    }
-
-    # check if end tag?
-    if ((substr $body, 0, 1) eq '/') {
-        my $rest = trim(substr $body, 1);
-        if (length $rest == 0) {
-            return _escape($tag);
-        }
-        my ($name) = split /\s+/, $rest;
-        if (length $name && $allowed_tags->{$name}) {
-            return "</" . $name . ">";
-        }
-        return _escape($tag);
-    }
-
-    my $terms = _split_body($body);
-    my $name = shift @$terms;
-
-    my $allowed = $allowed_tags->{$name};
-    if (!$allowed) {
-        return _escape($tag);
-    }
-
-    my $valid = 0;
-    for (my $i = 0; $i < @$terms; $i++) {
-        $valid = 0;
-        my ($ename) = split /=/, $terms->[$i];
-        for (my $j = 0; $j < @$allowed; $j++) {
-            if ($ename eq $allowed->[$i]) {
-                $valid = 1;
-                last;
-            }
-        }
-        if (!$valid) {
-            last;
-        }
-    }
-    if ($valid) {
-        return $tag;
+  for my $l (@{$lines->self}) {
+    if ($l->match($blank)) {
+      if (!$cont) {
+        $cont = 1;
+        $results->push(string("</p><p>"));
+      }
     } else {
-        return _escape($tag);
+      $results->push($l);
+      $cont = 0;
     }
+  }
+  $results->push(string("</p>"));
+  return $results->join("\n");
+}
+
+sub _escape_tag {
+  my ($allowed_tags, $tag) = @_;
+
+  if ($allowed_tags->keys->length == 0) {
+    return _to_entity($tag);
+  }
+  my $rex = regex(qr/^<(.*)>$/);
+  my $m = $rex->exec($tag);
+  if (!$m) {
+    return _to_entity($tag);
+  }
+  my $body = string($m->[1])->trim();
+  if ($body->length == 0) {
+    return _to_entity($tag);
+  }
+  # check if end tag?
+  if (_char_at_eq($body, 0, '/')) {
+    my $rest = $body->slice(1)->trim();
+    if ($rest->length == 0) {
+      return _to_entity($tag);
+    }
+    my $splited = $rest->split(qr/\s+/, 1);
+    my $name = $splited->shift();
+    my $raw_name = $name->{string};
+    if ($name->length
+        && $allowed_tags->{hash}->{$raw_name}) {
+        return string("</" . $raw_name . ">");
+    }
+    return _to_entity($tag);
+  }
+
+  my $terms = _split_body($body);
+  my $name = $terms->shift();
+
+  my $allowed = $allowed_tags->{hash}->{$name};
+  $allowed = array($allowed);
+  if (!$allowed) {
+    return _to_entity($tag);
+  }
+  if ($allowed->length == 0) {
+    return $tag;
+  }
+
+  my $valid = 0;
+  for (my $i = 0; $i < $terms->length; $i++) {
+    $valid = 0;
+    my $el = string($terms->{array}->[$i]);
+    my $ename = $el->split("=", 1)->shift()->{string};
+    for (my $j = 0; $j < $allowed->length; $j++) {
+      if ($ename eq $allowed->{array}->[$i]) {
+        $valid = 1;
+        last;
+      }
+    }
+    if (!$valid) {
+      last;
+    }
+  }
+  if ($valid) {
+    return $tag;
+  } else {
+    return _to_entity($tag);
+  }
 }
 
 sub _split_body {
-    my $body = shift;
-    my $rexes = [
-                 '\A([^\s=]+="[^"]*")\s*(.*)\z',
-                 q|\A([^\s=]+='[^']*')\s*(.*)\z|,
-                 '\A([^\s=]+=\S+)\s*(.*)\z',
-                 '\A(\S+)\s*(.*)\z',
-    ];
-    my $results = [];
+  my ($body) = @_;
 
-    while(length $body) {
-        my $k = @$rexes;
-        my ($m1, $m2);
+  my $rexes = array([
+      qr/^([^\s=]+="[^"]*")\s*(.*)$/,
+      qr/^([^\s=]+='[^']*')\s*(.*)$/,
+      qr/^([^\s=]+=\S+)\s*(.*)$/,
+      qr/^(\S+)\s*(.*)$/,
+  ]);
+  my $results = array([]);
 
-        for (my $i = 0; $i < @$rexes; $i++) {
-            my $r = $rexes->[$i];
-            if ($body =~ /$r/) {
-                $m1 = $1;
-                $m2 = $2;
-                last;
-            }
-        }
-        if (!$m1) {
-            last;
-        }
-        push @$results, $m1;
-        if ($m2) {
-            $body = $m2;
-            $m2 = undef;
-        } else {
-            last;
-        }
+  while($body && $body->length) {
+    my $m = undef;
+    for (my $i = 0; $i < $rexes->length && !$m; $i++) {
+      $m = $body->match($rexes->{array}->[$i]);
     }
-    return $results;
+    if (!$m) {
+      last;
+    }
+    $results->push($m->[1]);
+    $body = string($m->[2]);
+    #$m->shift();
+    #$results->push($results->shift());
+    #$body = $m->shift();
+  }
+  return $results;
 }
 
-sub _escape {
-    my $t = shift;
-    $t =~ s/&(?!|lt;|gt;)/&amp;/g;
-    $t =~ s/</&lt;/g;
-    $t =~ s/>/&gt;/g;
-    return $t;
+sub _to_entity {
+  my ($tag) = @_;
+
+  my $t = $tag->replace(qr/&(?!|lt;|gt;)/, '&amp;');
+  $t = $t->replace(qr/</, '&lt;');
+  $t = $t->replace(qr/>/, '&gt;');
+  return $t;
 }
 
-sub escape_html {
-    my ($allowed_tags, $text) = @_;
-    my $cursor = 0;
-    my $last = 0;
-    my @results;
-    my $in_tag = 0;
-    my $in_attr = 0;
-    my $start_quote = "";
-    my $s;
-    my $e;
+sub _slice_and_push {
+  my ($results, $text, $last, $cursor, $allowed_tags) = @_;
 
-    while ($cursor < length $text) {
-        if ($in_attr) {
-            if (substr($text, $cursor, 1) eq $start_quote) {
-                $in_attr = 0;
-            }
-            $cursor++;
-            next;
-        }
+  my $s = $text->slice($last, $cursor);
+  if ($allowed_tags) {
+    $s = _escape_tag($allowed_tags, $s);
+    $results->push($s);
+  } else {
+    $results->push(_to_entity($s));
+  }
+}
 
-        if ($in_tag) {
-            if (substr($text, $cursor, 1) eq '>') {
-                $cursor++;
-                $s = substr($text, $last, ($cursor - $last));
-                $e = escape_tag($allowed_tags, $s);
-                push @results, $e;
-                $last = $cursor;
-                $in_tag = 0;
-                next;
-            }
+sub _char_at_eq {
+  my ($string, $index, $char) = @_;
 
-            if (substr($text, $cursor, 1) eq '<') {
-                if ($last != $cursor) {
-                    $s = substr($text, $last, ($cursor - $last));
-                    $e = _escape($s);
-                    push @results, $e;
-                    $last = $cursor;
-                }
-                $cursor++;
-                next;
-            }
-            if (substr($text, $cursor, 1) eq '"') {
-                $in_attr = 1;
-                $start_quote = '"';
-                $cursor++;
-                next;
-            }
-            if (substr($text, $cursor, 1) eq "'") {
-                $in_attr = 1;
-                $start_quote = "'";
-                $cursor++;
-                next;
-            }
-        }
-        if (substr($text, $cursor, 1) eq '<') {
-            $in_tag = 1;
-            if ($last != $cursor) {
-                $s = substr($text, $last, ($cursor - $last));
-                $e = _escape($s);
-                push @results, $e;
-                $last = $cursor;
-            }
-            $cursor++;
-            next;
-        }
+  return $string->charAt($index) eq $char;
+}
 
-        if (substr($text, $cursor, 1) eq '>') {
-            $cursor++;
-            if ($last != $cursor) {
-                $s = substr($text, $last, ($cursor - $last));
-                $e = _escape($s);
-                push @results, $e;
-                $last = $cursor;
-            }
-            next;
+sub escape {
+  my ($allowed_tags, $text) = @_;
+
+  my $cursor = 0;
+  my $last = 0;
+  my $results = array([]);
+  my $in_tag = 0;
+  my $in_attr = 0;
+  my $start_quote = "";
+
+  $text = string($text);
+  $allowed_tags = hash($allowed_tags);
+
+  while($cursor < $text->length) {
+    if ($in_attr) {
+      if (_char_at_eq($text, $cursor, $start_quote)) {
+        $in_attr = 0;
+      }
+      $cursor++;
+      next;
+    }
+
+    if ($in_tag) {
+      if (_char_at_eq($text, $cursor, '>')) {
+        $cursor++;
+        _slice_and_push($results, $text, $last, $cursor, $allowed_tags);
+        $last = $cursor;
+        $in_tag = 0;
+        next;
+      }
+      if (_char_at_eq($text, $cursor, '<')) {
+        if ($last != $cursor) {
+          _slice_and_push($results, $text, $last, $cursor);
+          $last = $cursor;
         }
         $cursor++;
         next;
+      }
+      if (_char_at_eq($text, $cursor, '"')) {
+        $in_attr = 1;
+        $start_quote = '"';
+        $cursor++;
+        next;
+      }
+      if (_char_at_eq($text, $cursor, "'")) {
+        $in_attr = 1;
+        $start_quote = "'";
+        $cursor++;
+        next;
+      }
     }
-    if ($last != $cursor) {
-        $s = substr($text, $last, ($cursor - $last));
-        $e = _escape($s);
-        push @results, $e;
+    if (_char_at_eq($text, $cursor, '<')) {
+      $in_tag = 1;
+      if ($last != $cursor) {
+        _slice_and_push($results, $text, $last, $cursor);
         $last = $cursor;
+      }
+      $cursor++;
+      next;
     }
 
-    return join "", @results;
+    if (_char_at_eq($text, $cursor, '>')) {
+      $cursor++;
+      if ($last != $cursor) {
+        _slice_and_push($results, $text, $last, $cursor);
+        $last = $cursor;
+      }
+      next;
+    }
+    $cursor++;
+    next;
+  }
+  if ($last != $cursor) {
+    _slice_and_push($results, $text, $last, $cursor);
+    $last = $cursor;
+  }
+  return $results->join("");
 }
 
+
 1;
+
