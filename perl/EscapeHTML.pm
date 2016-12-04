@@ -1,5 +1,5 @@
-
 package EscapeHTML;
+
 use strict;
 use warnings;
 use utf8;
