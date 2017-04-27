@@ -84,12 +84,14 @@ function _escape_tag($allowed_tags, $tag) {
     var $splited = $rest.split(/\s+/, 1);
     var $name = $splited.shift();
     //JS:ONLY
+    $name = $name.toLowerCase();
     if ($name.length && $allowed_tags[$name]) {
       return "</" + $name + ">";
     } 
     //END
     /* PL:ONLY
     my $raw_name = $name->{string};
+    $raw_name = lc($raw_name);
     if ($name->length
         && $allowed_tags->{hash}->{$raw_name}) {
         return string("</" . $raw_name . ">");
@@ -100,6 +102,12 @@ function _escape_tag($allowed_tags, $tag) {
 
   const $terms = _split_body($body);
   var $name = $terms.shift();
+  //JS:ONLY
+  $name = $name.toLowerCase();
+  //END
+  /* PL:ONLY
+  $name = lc($name);
+  END  */
 
   //JS:ONLY
   const $allowed = $allowed_tags[$name];
@@ -115,9 +123,8 @@ function _escape_tag($allowed_tags, $tag) {
     return $tag;
   }
 
-  var $valid = 0;
+  var $valid = 1;
   for (var $i = 0; $i < $terms.length; $i++) {
-    $valid = 0;
     //JS:ONLY
     var $ename = string($terms[$i]).split("=", 1).shift();
     //END
@@ -127,12 +134,12 @@ function _escape_tag($allowed_tags, $tag) {
     END */
     for (var $j = 0; $j < $allowed.length; $j++) {
       //JS:ONLY
-      if ($ename == $allowed[$i]) {
+      if ($ename != $allowed[$i]) {
       //END
       /* PL:ONLY
-      if ($ename eq $allowed->{array}->[$i]) {
+      if ($ename ne $allowed->{array}->[$i]) {
       END */
-        $valid = 1;
+        $valid = 0;
         break;
       }
     }

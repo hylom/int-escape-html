@@ -1,5 +1,5 @@
-package EscapeHTML;
 
+package EscapeHTML;
 use strict;
 use warnings;
 use utf8;
@@ -54,6 +54,7 @@ sub _escape_tag {
     my $splited = $rest->split(qr/\s+/, 1);
     my $name = $splited->shift();
     my $raw_name = $name->{string};
+    $raw_name = lc($raw_name);
     if ($name->length
         && $allowed_tags->{hash}->{$raw_name}) {
         return string("</" . $raw_name . ">");
@@ -63,6 +64,7 @@ sub _escape_tag {
 
   my $terms = _split_body($body);
   my $name = $terms->shift();
+  $name = lc($name);
 
   my $allowed = $allowed_tags->{hash}->{$name};
   $allowed = array($allowed);
@@ -73,14 +75,13 @@ sub _escape_tag {
     return $tag;
   }
 
-  my $valid = 0;
+  my $valid = 1;
   for (my $i = 0; $i < $terms->length; $i++) {
-    $valid = 0;
     my $el = string($terms->{array}->[$i]);
     my $ename = $el->split("=", 1)->shift()->{string};
     for (my $j = 0; $j < $allowed->length; $j++) {
-      if ($ename eq $allowed->{array}->[$i]) {
-        $valid = 1;
+      if ($ename ne $allowed->{array}->[$i]) {
+        $valid = 0;
         last;
       }
     }
