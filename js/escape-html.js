@@ -211,6 +211,18 @@ function _char_at_eq($string, $index, $char) {
   END */
 }
 
+function escape_tag($allowed_tags, $tag_text) {
+  /* PL:ONLY
+  $tag_text = string($tag_text);
+  $allowed_tags = hash($allowed_tags);
+   END */
+  var $results = array([]);
+  var $s = _escape_tag($allowed_tags, $tag_text);
+  $results.push($s);
+  return $results.join("");
+
+}
+
 function escape($allowed_tags, $text) {
   var $cursor = 0;
   var $last = 0;

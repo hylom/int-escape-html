@@ -151,6 +151,18 @@ sub _char_at_eq {
   return $string->charAt($index) eq $char;
 }
 
+sub escape_tag {
+  my ($allowed_tags, $tag_text) = @_;
+
+  $tag_text = string($tag_text);
+  $allowed_tags = hash($allowed_tags);
+  my $results = array([]);
+  my $s = _escape_tag($allowed_tags, $tag_text);
+  $results->push($s);
+  return $results->join("");
+
+}
+
 sub escape {
   my ($allowed_tags, $text) = @_;
 
