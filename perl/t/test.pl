@@ -6,9 +6,13 @@ use utf8;
 #use Test::More;
 use Data::Dumper;
 
+BEGIN {
+    push @INC, ".";
+}
+
 use EscapeHTML;
 
-my $test = "<a href=\"example.com/><\">example.com</a>\nfoo>bar< hoge&lt;hoge<br>\n\n<script>hoge&hoge</script>\n\n\n<blockquote>\n<i>block<strong>hoge</i></strong>quoted!!";
+my $test = "<a name>hoge</a><a href=\"example.com/><\">example.com</a>\nfoo>bar< hoge&lt;hoge<br>\n\n<script>hoge&hoge</script>\n\n\n<blockquote>\n<i>block<strong>hoge</i></strong>quoted!!";
 
 my $allowed_tags = {
     "a"=> ["href"],

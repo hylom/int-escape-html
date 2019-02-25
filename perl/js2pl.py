@@ -2,7 +2,7 @@
 import sys
 import re
 
-rex_function = re.compile(ur"^function\s+(\w+)\s*\(([^)]+)\)\s*{\s*$")
+rex_function = re.compile(ur"^\s*function\s+(\w+)\s*\(([^)]+)\)\s*{\s*$")
 rex_js_begin = re.compile(ur"^\s*//JS:ONLY")
 rex_js_end = re.compile(ur"^\s*//END")
 rex_pl_begin = re.compile(ur"^\s*/\*\s+PL:ONLY")
