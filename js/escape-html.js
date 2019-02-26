@@ -65,24 +65,35 @@ var eh = {};
   }
 
   function _escape_tag($allowed_tags, $tag) {
+    /* PL:ONLY
+       #warn "escape_tag: $tag->{string}";
+       END */
+
+    // $allowed_tags not given, entitize
     if (Object.keys($allowed_tags).length === 0) {
       return _to_entity($tag);
     }
+
+    // if $tag is brank, entitize
     const $rex = regex(/^<(.*)>$/m);
     const $m = $rex.exec($tag);
     if (!$m) {
       return _to_entity($tag);
     }
+
+    // trim tag body
     const $body = string($m[1]).trim();
     if ($body.length == 0) {
       return _to_entity($tag);
     }
+
     // check if end tag?
     if (_char_at_eq($body, 0, '/')) {
       const $rest = $body.slice(1).trim();
       if ($rest.length == 0) {
         return _to_entity($tag);
       }
+
       var $splited = $rest.split(/\s+/, 1);
       var $name = $splited.shift();
       //JS:ONLY
@@ -92,8 +103,9 @@ var eh = {};
       } 
       //END
       /* PL:ONLY
-       my $raw_name = $name->{string};
+       my $raw_name = $name->{string}; 
        $raw_name = lc($raw_name);
+       #warn "tagname: $raw_name";
        if ($name->length
        && $allowed_tags->{hash}->{$raw_name}) {
        return string("</" . $raw_name . ">");
@@ -102,6 +114,7 @@ var eh = {};
       return _to_entity($tag);
     }
 
+    // tag is start tag.
     const $terms = _split_body($body);
     var $name = $terms.shift();
     //JS:ONLY
@@ -109,6 +122,7 @@ var eh = {};
     //END
     /* PL:ONLY
      $name = lc($name);
+     #warn "tagname: $name";
      END  */
 
     //JS:ONLY
@@ -116,7 +130,10 @@ var eh = {};
     //END
     /* PL:ONLY
      my $allowed = $allowed_tags->{hash}->{$name};
+     if (defined $allowed) {
      $allowed = array($allowed);
+     }
+     #warn Dumper $allowed;
      END */
     if (!$allowed) {
       return _to_entity($tag);

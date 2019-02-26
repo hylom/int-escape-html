@@ -33,28 +33,38 @@ sub blank_line_to_paragraph {
 sub _escape_tag {
   my ($allowed_tags, $tag) = @_;
 
+       #warn "escape_tag: $tag->{string}";
+
+    # $allowed_tags not given, entitize
     if ($allowed_tags->keys->length == 0) {
       return _to_entity($tag);
     }
+
+    # if $tag is brank, entitize
     my $rex = regex(qr/^<(.*)>$/);
     my $m = $rex->exec($tag);
     if (!$m) {
       return _to_entity($tag);
     }
+
+    # trim tag body
     my $body = string($m->[1])->trim();
     if ($body->length == 0) {
       return _to_entity($tag);
     }
+
     # check if end tag?
     if (_char_at_eq($body, 0, '/')) {
       my $rest = $body->slice(1)->trim();
       if ($rest->length == 0) {
         return _to_entity($tag);
       }
+
       my $splited = $rest->split(qr/\s+/, 1);
       my $name = $splited->shift();
        my $raw_name = $name->{string};
        $raw_name = lc($raw_name);
+       #warn "tagname: $raw_name";
        if ($name->length
        && $allowed_tags->{hash}->{$raw_name}) {
        return string("</" . $raw_name . ">");
@@ -62,13 +72,19 @@ sub _escape_tag {
       return _to_entity($tag);
     }
 
+    # tag is start tag.
     my $terms = _split_body($body);
     my $name = $terms->shift();
      $name = lc($name);
+     #warn "tagname: $name";
 
      my $allowed = $allowed_tags->{hash}->{$name};
+     if (defined $allowed) {
      $allowed = array($allowed);
+     }
+     #warn Dumper $allowed;
     if (!$allowed) {
+       #warn "tag $name is not allowed";
       return _to_entity($tag);
     }
     if ($allowed->length == 0) {
