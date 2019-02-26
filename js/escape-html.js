@@ -70,7 +70,7 @@ var eh = {};
        END */
 
     // $allowed_tags not given, entitize
-    if (Object.keys($allowed_tags).length === 0) {
+    if (!$allowed_tags || Object.keys($allowed_tags).length === 0) {
       return _to_entity($tag);
     }
 

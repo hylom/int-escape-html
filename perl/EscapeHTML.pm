@@ -36,7 +36,7 @@ sub _escape_tag {
        #warn "escape_tag: $tag->{string}";
 
     # $allowed_tags not given, entitize
-    if ($allowed_tags->keys->length == 0) {
+    if (!$allowed_tags || $allowed_tags->keys->length == 0) {
       return _to_entity($tag);
     }
 
@@ -84,7 +84,6 @@ sub _escape_tag {
      }
      #warn Dumper $allowed;
     if (!$allowed) {
-       #warn "tag $name is not allowed";
       return _to_entity($tag);
     }
     if ($allowed->length == 0) {
