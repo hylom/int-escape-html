@@ -65,33 +65,43 @@ var eh = {};
   }
 
   function _escape_tag($allowed_tags, $tag) {
+    // remove \n from $tag
     /* PL:ONLY
-       #warn "escape_tag: $tag->{string}";
+       my $tag_org = Js2pl::String->new;
+       $tag_org->{string} = $tag->{string};
+       $tag->{string} =~ s/\n/ /g;
+       #warn "escape_tag: ". $tag->{string};
        END */
+    //JS:ONLY
+    var $tag_org = $tag;
+    $tag.replace(/\n/, " ");
+    //END
 
     // $allowed_tags not given, entitize
     if (!$allowed_tags || Object.keys($allowed_tags).length === 0) {
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
+
+    
 
     // if $tag is brank, entitize
     const $rex = regex(/^<(.*)>$/m);
     const $m = $rex.exec($tag);
     if (!$m) {
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
 
     // trim tag body
     const $body = string($m[1]).trim();
     if ($body.length == 0) {
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
 
     // check if end tag?
     if (_char_at_eq($body, 0, '/')) {
       const $rest = $body.slice(1).trim();
       if ($rest.length == 0) {
-        return _to_entity($tag);
+        return _to_entity($tag_org);
       }
 
       var $splited = $rest.split(/\s+/, 1);
@@ -111,7 +121,7 @@ var eh = {};
        return string("</" . $raw_name . ">");
        } 
        END  */
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
 
     // tag is start tag.
@@ -136,20 +146,26 @@ var eh = {};
      #warn Dumper $allowed;
      END */
     if (!$allowed) {
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
     if ($allowed.length == 0) {
-      return $tag;
+      return $tag_org;
     }
 
     var $valid = 1;
     for (var $i = 0; $i < $terms.length; $i++) {
       //JS:ONLY
       var $ename = string($terms[$i]).split("=", 1).shift();
+      if ($ename.length == 0) {
+        break;
+      }
       //END
       /* PL:ONLY
        my $el = string($terms->{array}->[$i]);
+       next if ($el =~ m/^\s*$/);
        my $ename = $el->split("=", 1)->shift()->{string};
+       next if !$ename;
+       #warn "check " . $el->{string}; 
        END */
       for (var $j = 0; $j < $allowed.length; $j++) {
         //JS:ONLY
@@ -167,9 +183,9 @@ var eh = {};
       }
     }
     if ($valid) {
-      return $tag;
+      return $tag_org;
     } else {
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
   }
 

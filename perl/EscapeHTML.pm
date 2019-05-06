@@ -33,31 +33,37 @@ sub blank_line_to_paragraph {
 sub _escape_tag {
   my ($allowed_tags, $tag) = @_;
 
-       #warn "escape_tag: $tag->{string}";
+    # remove \n from $tag
+       my $tag_org = Js2pl::String->new;
+       $tag_org->{string} = $tag->{string};
+       $tag->{string} =~ s/\n/ /g;
+       #warn "escape_tag: ". $tag->{string};
 
     # $allowed_tags not given, entitize
     if (!$allowed_tags || $allowed_tags->keys->length == 0) {
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
+
+
 
     # if $tag is brank, entitize
     my $rex = regex(qr/^<(.*)>$/);
     my $m = $rex->exec($tag);
     if (!$m) {
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
 
     # trim tag body
     my $body = string($m->[1])->trim();
     if ($body->length == 0) {
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
 
     # check if end tag?
     if (_char_at_eq($body, 0, '/')) {
       my $rest = $body->slice(1)->trim();
       if ($rest->length == 0) {
-        return _to_entity($tag);
+        return _to_entity($tag_org);
       }
 
       my $splited = $rest->split(qr/\s+/, 1);
@@ -69,7 +75,7 @@ sub _escape_tag {
        && $allowed_tags->{hash}->{$raw_name}) {
        return string("</" . $raw_name . ">");
        }
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
 
     # tag is start tag.
@@ -84,16 +90,19 @@ sub _escape_tag {
      }
      #warn Dumper $allowed;
     if (!$allowed) {
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
     if ($allowed->length == 0) {
-      return $tag;
+      return $tag_org;
     }
 
     my $valid = 1;
     for (my $i = 0; $i < $terms->length; $i++) {
        my $el = string($terms->{array}->[$i]);
+       next if ($el =~ m/^\s*$/);
        my $ename = $el->split("=", 1)->shift()->{string};
+       next if !$ename;
+       #warn "check " . $el->{string};
       for (my $j = 0; $j < $allowed->length; $j++) {
            if ($ename ne $allowed->{array}->[$i]) {
           $valid = 0;
@@ -105,9 +114,9 @@ sub _escape_tag {
       }
     }
     if ($valid) {
-      return $tag;
+      return $tag_org;
     } else {
-      return _to_entity($tag);
+      return _to_entity($tag_org);
     }
   }
 

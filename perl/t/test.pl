@@ -31,7 +31,7 @@ use EscapeHTML;
 
 my $allowed_tags = { "a"=> ["href"],
                      "p"=> [],
-                     "blockquote"=> [],
+                     "blockquote"=> ["title", "cite"],
                      "i"=> [],
                      "strong"=> [],
                      "br" => [],
@@ -44,18 +44,20 @@ foo>bar< hoge&lt;hoge<br>
 <script>hoge&hoge</script>
 
 
-<blockquote>
-<i>block<strong>hoge</i></strong>quoted!!";
+<blockquote
+>
+<i>block<strong>hoge</i></strong>quoted!!;
 EOL
 
 my $expect = <<EOL;
-&lt;a name&gt;hoge&lt;/a&gt;<a href="example.com/><">example.com</a>
+&lt;a name&gt;hoge</a><a href="example.com/><">example.com</a>
 foo&gt;bar&lt; hoge&lt;hoge<br>
 
 &lt;script&gt;hoge&hoge&lt;/script&gt;
 
 
-<blockquote>
+<blockquote
+>
 <i>block<strong>hoge</i></strong>quoted!!;
 EOL
 
